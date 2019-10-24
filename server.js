@@ -263,5 +263,5 @@ app.delete("/notes/delete/:note_id/:article_id", function(req, res) {
 
 // Listen on port
 app.listen(port, function() {
-  console.log("App running on port " + port);
+  console.log("App running on port: " + port);
 });
