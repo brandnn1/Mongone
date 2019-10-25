@@ -1,6 +1,5 @@
 // Dependencies
 var express = require("express");
-var bodyParser = require("body-parser");
 var logger = require("morgan");
 var mongoose = require("mongoose");
 var path = require("path");
@@ -24,9 +23,9 @@ var app = express();
 
 // Use morgan and body parser with our app
 app.use(logger("dev"));
-app.use(bodyParser.urlencoded({
-  extended: false
-}));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
 
 // Make public a static dir
 app.use(express.static("public"));
