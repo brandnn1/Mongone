@@ -1,6 +1,5 @@
 // Dependencies
 var express = require("express");
-var logger = require("morgan");
 var mongoose = require("mongoose");
 var path = require("path");
 
@@ -22,7 +21,6 @@ var port = process.env.PORT || 3000
 var app = express();
 
 // Use morgan and body parser with our app
-app.use(logger("dev"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
