@@ -7,8 +7,10 @@ var logger = require("morgan");
 // Requiring Note and Article models
 var db = require("./models")
 // Scraping tools
-var request = require("request");
+
 var cheerio = require("cheerio");
+var dotenv = require('dotenv');
+dotenv.config()
 
 // Set mongoose to leverage built in JavaScript ES6 Promises
 mongoose.Promise = Promise;
