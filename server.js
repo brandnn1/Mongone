@@ -5,9 +5,7 @@ var path = require("path");
 var axios = require("axios");
 var logger = require("morgan");
 // Requiring Note and Article models
-var Note = require("./models/Note.js");
-var Article = require("./models/Article.js");
-
+var db = require("./models")
 // Scraping tools
 var request = require("request");
 var cheerio = require("cheerio");
@@ -46,15 +44,15 @@ var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoHeadlines
 mongoose.connect(MONGODB_URI);
 
 //mongoose.connect("mongodb://localhost/mongoscraper");
-var db = mongoose.connection;
+var mc = mongoose.connection;
 
 // Show any mongoose errors
-db.on("error", function(error) {
+mc.on("error", function(error) {
   console.log("Mongoose Error: ", error);
 });
 
 // Once logged in to the db through mongoose, log a success message
-db.once("open", function() {
+mc.once("open", function() {
   console.log("Mongoose connection successful.");
 });
 
@@ -63,7 +61,7 @@ db.once("open", function() {
 
 //GET requests to render Handlebars pages
 app.get("/", function(req, res) {
-  Article.find({"saved": false}, function(error, data) {
+  db.Article.find({"saved": false}, function(error, data) {
     var hbsObject = {
       article: data
     };
@@ -73,7 +71,7 @@ app.get("/", function(req, res) {
 });
 
 app.get("/saved", function(req, res) {
-  Article.find({"saved": true}).populate("notes").exec(function(error, articles) {
+  db.Article.find({"saved": true}).populate("notes").exec(function(error, articles) {
     var hbsObject = {
       article: articles
     };
@@ -108,7 +106,7 @@ app.get("/scrape", function(req, res) {
 
       // Using our Article model, create a new entry
       // This effectively passes the result object to the entry (and the title and link)
-      var entry = new Article(result);
+      var entry = new db.Article(result);
 
       // Now, save that entry to the db
       entry.save(function(err, doc) {
@@ -132,7 +130,7 @@ app.get("/scrape", function(req, res) {
 // This will get the articles we scraped from the mongoDB
 app.get("/articles", function(req, res) {
   // Grab every doc in the Articles array
-  Article.find({}, function(error, doc) {
+  db.Article.find({}, function(error, doc) {
     // Log any errors
     if (error) {
       console.log(error);
@@ -147,7 +145,7 @@ app.get("/articles", function(req, res) {
 // Grab an article by it's ObjectId
 app.get("/articles/:id", function(req, res) {
   // Using the id passed in the id parameter, prepare a query that finds the matching one in our db...
-  Article.findOne({ "_id": req.params.id })
+  db.Article.findOne({ "_id": req.params.id })
   // ..and populate all of the notes associated with it
   .populate("note")
   // now, execute our query
@@ -167,7 +165,7 @@ app.get("/articles/:id", function(req, res) {
 // Save an article
 app.post("/articles/save/:id", function(req, res) {
       // Use the article id to find and update its saved boolean
-      Article.findOneAndUpdate({ "_id": req.params.id }, { "saved": true})
+      db.Article.findOneAndUpdate({ "_id": req.params.id }, { "saved": true})
       // Execute the above query
       .exec(function(err, doc) {
         // Log any errors
@@ -184,7 +182,7 @@ app.post("/articles/save/:id", function(req, res) {
 // Delete an article
 app.post("/articles/delete/:id", function(req, res) {
       // Use the article id to find and update its saved boolean
-      Article.findOneAndUpdate({ "_id": req.params.id }, {"saved": false, "notes": []})
+      db.Article.findOneAndUpdate({ "_id": req.params.id }, {"saved": false, "notes": []})
       // Execute the above query
       .exec(function(err, doc) {
         // Log any errors
@@ -202,7 +200,7 @@ app.post("/articles/delete/:id", function(req, res) {
 // Create a new note
 app.post("/notes/save/:id", function(req, res) {
   // Create a new note and pass the req.body to the entry
-  var newNote = new Note({
+  var newNote = new db.Note({
     body: req.body.text,
     article: req.params.id
   });
@@ -216,7 +214,7 @@ app.post("/notes/save/:id", function(req, res) {
     // Otherwise
     else {
       // Use the article id to find and update it's notes
-      Article.findOneAndUpdate({ "_id": req.params.id }, {$push: { "notes": note } })
+      db.Article.findOneAndUpdate({ "_id": req.params.id }, {$push: { "notes": note } })
       // Execute the above query
       .exec(function(err) {
         // Log any errors
@@ -236,14 +234,14 @@ app.post("/notes/save/:id", function(req, res) {
 // Delete a note
 app.delete("/notes/delete/:note_id/:article_id", function(req, res) {
   // Use the note id to find and delete it
-  Note.findOneAndRemove({ "_id": req.params.note_id }, function(err) {
+  db.Note.findOneAndRemove({ "_id": req.params.note_id }, function(err) {
     // Log any errors
     if (err) {
       console.log(err);
       res.send(err);
     }
     else {
-      Article.findOneAndUpdate({ "_id": req.params.article_id }, {$pull: {"notes": req.params.note_id}})
+      db.Article.findOneAndUpdate({ "_id": req.params.article_id }, {$pull: {"notes": req.params.note_id}})
        // Execute the above query
         .exec(function(err) {
           // Log any errors
